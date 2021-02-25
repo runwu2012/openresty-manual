@@ -4,10 +4,14 @@
 
 install_dir=/opt/openresty
 nginx_dir=${install_dir}/nginx
-config_dir=/${install_dir}/nginx/conf
+config_dir=${install_dir}/nginx/conf
 log_dir=${install_dir}/nginx/logs
 pid_file=${log_dir}/nginx.pid
-echo "install_dir ${install_dir}.nginx_dir ${nginx_dir},config_dir ${config_dir},log_dir ${log_dir},pid_file ${pid_file}"
+echo "install_dir ${install_dir};
+nginx_dir ${nginx_dir};
+config_dir ${config_dir};
+log_dir ${log_dir};
+pid_file ${pid_file}"
 
 
 if [[ ! -e ${install_dir} ]]; then
@@ -24,53 +28,49 @@ fi
 [ -d ${install_dir}/nginx/sbin ] && PATH=$PATH:${install_dir}/nginx/sbin
 export PATH
 #logrotate.conf
-cat <<
-echo "Please add a fllow line to the ~/.bashrc or ~/.zshrc;export PATH=${install_dir}/bin:$PATH"
+
+echo "Please add a fllow line to the ~/.bashrc or ~/.zshrc:"
+export PATH=${install_dir}/bin:$PATH
 
 #vi auto/cc/gcc
 #debug
+useradd -m nginx && groupadd nginx 
+usermod -G nginx nginx
 
 cd ./openresty-1.19.3.1/
-./configure \
-  --prefix=${install_dir} \
-  --conf-path=${nginx_dir}/nginx.conf \  
-  --user=nginx --group=nginx \
-  --with-compat \
-  --with-file-aio \
-  --with-threads \
-  --with-http_addition_module \
-  --with-http_auth_request_module \
-  --with-http_dav_module \
-  --with-http_flv_module \
-  --with-http_gunzip_module \
-  --with-http_gzip_static_module \
-  --with-http_mp4_module \
-  --with-http_random_index_module \
-  --with-http_realip_module \
-  --with-http_secure_link_module \
-  --with-http_slice_module \
-  --with-http_ssl_module \
-  --with-http_stub_status_module \
-  --with-http_sub_module \
-  --with-http_v2_module \
-  --with-stream 
-  --with-stream_ssl_module \
-  --with-stream_ssl_preread_module \
-  --with-http_iconv_module \
-  --with-pcre \
-  --with-pcre-jit \
-  --with-luajit \
-  --with-ld-opt=-ljemalloc \
-  --without-mail \
-  --without-mail_pop3_module \
-  --without-mail_imap_module \
-  --without-mail_smtp_module \
-  --add-module=./ngx_brotli \
-  --add-module=./ngx_cache_purge \
-  --add-module=./nginx-module-vts \
-  #--add-module=./nginx-upsync-module-2.1.3 \
-  #--add-module=./nginx_upstream_check_module \
-  #--add-module=./ngx_http_substitutions_filter_module \
+./configure --prefix=${install_dir} \
+--conf-path=${nginx_dir}/nginx.conf \
+--user=nginx --group=nginx \
+--with-compat \
+--with-file-aio \
+--with-threads \
+--with-http_addition_module \
+--with-http_auth_request_module \
+--with-http_dav_module \
+--with-http_flv_module \
+--with-http_gunzip_module \
+--with-http_gzip_static_module \
+--with-http_mp4_module \
+--with-http_random_index_module \
+--with-http_realip_module \
+--with-http_secure_link_module \
+--with-http_slice_module \
+--with-http_ssl_module \
+--with-http_stub_status_module \
+--with-http_sub_module \
+--with-http_v2_module \
+--with-stream \
+--with-stream_ssl_module \
+--with-pcre \
+--with-pcre-jit \
+--with-luajit \
+--with-ld-opt=-ljemalloc \
+#--without-mail \
+--add-module=./ngx_brotli \
+--add-module=./ngx_cache_purge \
+--add-module=./nginx-module-vts \
+
+make -j8 && make install -j8
 
 cat >>/etc/systemd/system/openresty.service <<-EOF
 [Unit]
