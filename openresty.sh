@@ -4,6 +4,8 @@
 
 install_dir=/opt/openresty
 nginx_dir=${install_dir}/nginx
+nginx_bin=${nginx_dir}/sbin/nginx
+openresty_bin=${install_dir}/bin/openresty
 config_dir=${install_dir}/nginx/conf
 log_dir=${install_dir}/nginx/logs
 pid_file=${log_dir}/nginx.pid
@@ -19,8 +21,12 @@ if [[ ! -e ${install_dir} ]]; then
     mkdir ${install_dir}
 fi
 if [[ ! -e ${nginx_dir} ]]; then
-    echo -e "ngconf directory ${nginx_dir} not Found,auto create it"
+    echo -e "nginx directory ${nginx_dir} not Found,auto create it"
     mkdir ${nginx_dir}
+fi
+if [[ ! -e ${config_dir} ]]; then
+    echo -e "ngconf directory ${config_dir} not Found,auto create it"
+    mkdir ${config_dir}
 fi
 
 
@@ -72,7 +78,7 @@ cd ./openresty-1.19.3.1/
 
 make -j8 && make install -j8
 
-cat >>/etc/systemd/system/openresty.service <<-EOF
+cat >/etc/systemd/system/openresty.service <<-EOF
 [Unit]
 Description=openresty
 After=syslog.target network.target
@@ -80,15 +86,15 @@ After=syslog.target network.target
 [Service]
 Type=forking
 PIDFile=${pid_file}
-ExecStartPre=${nginx_dir}/sbin/nginx -t -q -g 'pid ${pid_file}; daemon on; master_process on;'
-ExecStart={nginx_dir}/sbin/nginx -g 'pid ${pid_file}; daemon on; master_process on;'
-ExecReload={nginx_dir}/sbin/nginx -g 'pid ${pid_file}; daemon on; master_process on;' -s reload
-ExecStop={nginx_dir}/sbin/nginx -g 'pid ${pid_file}; daemon on; master_process on;' -s quit
+ExecStartPre=${openrest_bin} -t -q -g 'pid ${pid_file}; daemon on; master_process on;'
+ExecStart=${openresty_bin} -g 'pid ${pid_file}; daemon on; master_process on;'
+ExecReload=${openresty_bin} -g 'pid ${pid_file}; daemon on; master_process on;' -s reload
+ExecStop=${openresty_bin} -g 'pid ${pid_file}; daemon on; master_process on;' -s quit
 [Install]
 WantedBy=multi-user.target
 EOF
 
-cat >>/etc/logrotate.d/nginx <<-EOF
+cat >/etc/logrotate.d/nginx <<-EOF
 ${log_dir}/*.log {
     daily
     missingok
@@ -97,6 +103,9 @@ ${log_dir}/*.log {
     delaycompress
     postrotate
     rotate 60
-    test -r ${pid_file} && kill -USER1 'cat ${pid_file}'
+    test -r ${pid_file} && kill -HUP \$(cat ${pid_file})
 }
 EOF
+
+echo updng scripts ,but only work on /bin/bash shell
+echo nginx -t >/opt/openresty/nginx/nginx_test 2>&1 \if [ $? == 0 ];then \kill -HUP $(cat /opt/openresty/nginx/logs/nginx.pid) > /dev/null 2>&1 && echo hot update nginx success \else \echo test nginx failed;cat /opt/openresty/nginx/nginx_test  \fi 
